@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RK KNIT FAB – Weekly Performance Dashboard</title>
+<title>Weekly Performance – RK KNIT FAB</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -18,112 +18,123 @@ body{
 h2{
   text-align:center;
   font-weight:600;
-  margin-bottom:20px;
+  margin-bottom:25px;
 }
 
-/* CARD STYLING */
+/* GLASS CARD */
 .card{
-  padding:15px;
-  margin-bottom:12px;
-  border-radius:16px;
+  padding:18px;
+  margin-bottom:18px;
+  border-radius:18px;
   background:rgba(255,255,255,0.55);
-  backdrop-filter:blur(8px);
+  backdrop-filter:blur(12px);
   border:1px solid rgba(255,255,255,0.45);
-  transition:0.25s;
+  box-shadow:0 10px 25px rgba(0,0,0,0.1);
 }
 
-.card:hover{
-  transform:scale(1.02);
+/* STEP CARDS GRID */
+.grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:15px;
 }
 
-/* COLOR CODES */
-.green{ border-left:10px solid #28a745; }
-.blue{ border-left:10px solid #007bff; }
-.yellow{ border-left:10px solid #ffc107; }
-.orange{ border-left:10px solid #ff7f0e; }
-.red{ border-left:10px solid #dc3545; }
-.grey{ border-left:10px solid #6c757d; }
+/* COLORS */
+.green{ border-left:12px solid #28a745; }
+.blue{ border-left:12px solid #007bff; }
+.yellow{ border-left:12px solid #ffc107; }
+.orange{ border-left:12px solid #fd7e14; }
+.red{ border-left:12px solid #dc3545; }
+.grey{ border-left:12px solid #6c757d; }
 
 .step-title{
   font-size:18px;
   font-weight:600;
-}
-
-.score{
-  font-size:16px;
-  font-weight:500;
-  margin-top:5px;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Weekly Performance Dashboard</h2>
+<h2>Weekly Production Performance</h2>
 
-<div id="cards"></div>
+<div id="weeklyBox"></div>
+
+<h3 style="margin-top:30px;">Step-wise Weekly Scores</h3>
+<div class="grid" id="steps"></div>
 
 <canvas id="chart" style="margin-top:30px;"></canvas>
 
 <script>
 
-// API URL
 const API = "https://script.google.com/macros/s/AKfycbxBwOJYL9OIPmsfPKE7s0teHAHp0I7svWM9ww5-_wTHlFXQN2zY7GhqQvga5tBopJcj/exec";
 
-let fullData = [];
+let weeklyData = {};
+let stepScores = [];
 
 async function loadData(){
-  fullData = await (await fetch(API)).json();
-  renderCards();
+  const res = await fetch(API);
+  const json = await res.json();
+  weeklyData = json.weeklyTotals;
+  stepScores = json.stepScores;
+  renderSummary();
+  renderSteps();
   renderChart();
 }
 
-function getColor(type){
-  if(type === "Early") return "green";
-  if(type === "On-Time") return "blue";
-  if(type === "Late") return "yellow";
-  if(type === "Very Late") return "orange";
-  if(type === "Overdue") return "red";
-  return "grey";
+function renderSummary(){
+  document.getElementById("weeklyBox").innerHTML = `
+    <div class="card">
+      <h3>Weekly Summary</h3>
+      <p><b>Total Planned:</b> ${weeklyData.plannedCount}</p>
+      <p><b>Total Actual:</b> ${weeklyData.actualCount}</p>
+      <p><b>On-Time:</b> ${weeklyData.onTime}</p>
+      <p><b>Late:</b> ${weeklyData.late}</p>
+      <p><b>Very Late:</b> ${weeklyData.veryLate}</p>
+      <p><b>Overdue:</b> ${weeklyData.overdue}</p>
+    </div>
+  `;
 }
 
-function renderCards(){
+function getColor(score){
+  if(score > 5) return "green";
+  if(score > 0) return "blue";
+  if(score === 0) return "grey";
+  if(score < -5) return "red";
+  return "yellow";
+}
+
+function renderSteps(){
   let html = "";
 
-  fullData.forEach(d => {
+  stepScores.forEach(s => {
     html += `
-      <div class="card ${getColor(d.type)}">
-        <div class="step-title">${d.step}</div>
-        <div class="score">Score: ${d.score}</div>
-        <div>Status: ${d.type}</div>
+      <div class="card ${getColor(s.score)}">
+        <div class="step-title">${s.step}</div>
+        <p>Weekly Score: <b>${s.score}</b></p>
       </div>
     `;
   });
 
-  document.getElementById("cards").innerHTML = html;
+  document.getElementById("steps").innerHTML = html;
 }
 
 function renderChart(){
-
   const ctx = document.getElementById("chart").getContext("2d");
-
-  const labels = fullData.map(d => d.step);
-  const scores = fullData.map(d => d.score);
 
   new Chart(ctx, {
     type: "bar",
     data: {
-      labels: labels,
+      labels: stepScores.map(s => s.step),
       datasets: [{
         label: "Weekly Score",
-        data: scores,
+        data: stepScores.map(s => s.score),
         borderWidth: 1
       }]
     }
   });
 }
 
-// Load data on start
 loadData();
 
 </script>
