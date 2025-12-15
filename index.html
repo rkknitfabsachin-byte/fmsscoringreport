@@ -1,93 +1,65 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RK KNIT FAB – Performance Dashboard</title>
+<title>RK KNIT FAB – Weekly Performance Dashboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <style>
 body{
   margin:0;
   padding:20px;
   font-family:Poppins, sans-serif;
-  background:linear-gradient(135deg,#dfe9f3,#ffffff);
+  background:linear-gradient(135deg,#dfe9f3,#f9fcff);
 }
 
 h2{
   text-align:center;
+  font-weight:600;
   margin-bottom:20px;
 }
 
-.filters{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-bottom:20px;
-}
-
-input, select, button{
-  padding:10px;
-  border-radius:10px;
-  border:1px solid #ccc;
-  font-size:15px;
-}
-
-button{
-  background:#007bff;
-  color:white;
-  cursor:pointer;
-}
-
-.section{
-  margin-top:20px;
-}
-
+/* CARD STYLING */
 .card{
   padding:15px;
-  border-radius:14px;
-  background:rgba(255,255,255,0.45);
-  backdrop-filter:blur(8px);
   margin-bottom:12px;
-  border:1px solid rgba(255,255,255,0.5);
+  border-radius:16px;
+  background:rgba(255,255,255,0.55);
+  backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.45);
+  transition:0.25s;
 }
 
-.green{border-left:8px solid #28a745;}
-.blue{border-left:8px solid #007bff;}
-.yellow{border-left:8px solid #ffc107;}
-.orange{border-left:8px solid #fd7e14;}
-.red{border-left:8px solid #dc3545;}
-.grey{border-left:8px solid #6c757d;}
+.card:hover{
+  transform:scale(1.02);
+}
+
+/* COLOR CODES */
+.green{ border-left:10px solid #28a745; }
+.blue{ border-left:10px solid #007bff; }
+.yellow{ border-left:10px solid #ffc107; }
+.orange{ border-left:10px solid #ff7f0e; }
+.red{ border-left:10px solid #dc3545; }
+.grey{ border-left:10px solid #6c757d; }
+
+.step-title{
+  font-size:18px;
+  font-weight:600;
+}
+
+.score{
+  font-size:16px;
+  font-weight:500;
+  margin-top:5px;
+}
 </style>
 </head>
 
 <body>
 
-<h2>Performance Dashboard</h2>
-
-<div class="filters">
-  <div>
-    <label>Start:</label><br>
-    <input type="date" id="start">
-  </div>
-
-  <div>
-    <label>End:</label><br>
-    <input type="date" id="end">
-  </div>
-
-  <div>
-    <label>Month:</label><br>
-    <input type="month" id="month">
-  </div>
-
-  <button onclick="filterRange()">Day Range</button>
-  <button onclick="filterWeekly()">Weekly</button>
-  <button onclick="filterMonthly()">Monthly</button>
-  <button onclick="downloadPDF()">Download PDF</button>
-</div>
+<h2>Weekly Performance Dashboard</h2>
 
 <div id="cards"></div>
 
@@ -95,44 +67,46 @@ button{
 
 <script>
 
-const API = "https://script.google.com/macros/s/AKfycbyInh3gz5YOQv45LvW-IkghTYQJNvhAjus06BNmDr6xGreaexxK0_QHXJ5OfbR2HvvX/exec";
+// API URL
+const API = "https://script.google.com/macros/s/AKfycbxBwOJYL9OIPmsfPKE7s0teHAHp0I7svWM9ww5-_wTHlFXQN2zY7GhqQvga5tBopJcj/exec";
 
 let fullData = [];
 
-async function loadData(url){
-  fullData = await (await fetch(url)).json();
-  render();
+async function loadData(){
+  fullData = await (await fetch(API)).json();
+  renderCards();
+  renderChart();
 }
 
-function render(){
-  
-  let container = "";
+function getColor(type){
+  if(type === "Early") return "green";
+  if(type === "On-Time") return "blue";
+  if(type === "Late") return "yellow";
+  if(type === "Very Late") return "orange";
+  if(type === "Overdue") return "red";
+  return "grey";
+}
+
+function renderCards(){
+  let html = "";
 
   fullData.forEach(d => {
-
-    let colorClass = "grey";
-    if (d.type === "Early") colorClass = "green";
-    else if (d.type === "On-Time") colorClass = "blue";
-    else if (d.type === "Late") colorClass = "yellow";
-    else if (d.type === "Very Late") colorClass = "orange";
-    else if (d.type === "Overdue") colorClass = "red";
-
-    container += `
-      <div class="card ${colorClass}">
-        <h3>${d.step}</h3>
-        <p>Score: <b>${d.score}</b></p>
-        <p>Status: ${d.type}</p>
+    html += `
+      <div class="card ${getColor(d.type)}">
+        <div class="step-title">${d.step}</div>
+        <div class="score">Score: ${d.score}</div>
+        <div>Status: ${d.type}</div>
       </div>
     `;
   });
 
-  document.getElementById("cards").innerHTML = container;
-  drawChart();
+  document.getElementById("cards").innerHTML = html;
 }
 
-function drawChart(){
+function renderChart(){
 
   const ctx = document.getElementById("chart").getContext("2d");
+
   const labels = fullData.map(d => d.step);
   const scores = fullData.map(d => d.score);
 
@@ -141,7 +115,7 @@ function drawChart(){
     data: {
       labels: labels,
       datasets: [{
-        label: "Score",
+        label: "Weekly Score",
         data: scores,
         borderWidth: 1
       }]
@@ -149,26 +123,8 @@ function drawChart(){
   });
 }
 
-function filterRange(){
-  const s = start.value;
-  const e = end.value;
-  loadData(`${API}?mode=range&start=${s}&end=${e}`);
-}
-
-function filterWeekly(){
-  loadData(`${API}?mode=weekly`);
-}
-
-function filterMonthly(){
-  const m = month.value;
-  loadData(`${API}?mode=monthly&month=${m}`);
-}
-
-function downloadPDF(){
-  html2pdf().from(document.body).save("performance.pdf");
-}
-
-loadData(API);
+// Load data on start
+loadData();
 
 </script>
 
