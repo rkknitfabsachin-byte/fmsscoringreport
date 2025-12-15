@@ -21,7 +21,6 @@ h2{
   margin-bottom:25px;
 }
 
-/* GLASS CARD */
 .card{
   padding:18px;
   margin-bottom:18px;
@@ -32,14 +31,12 @@ h2{
   box-shadow:0 10px 25px rgba(0,0,0,0.1);
 }
 
-/* STEP CARDS GRID */
 .grid{
   display:grid;
   grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
   gap:15px;
 }
 
-/* COLORS */
 .green{ border-left:12px solid #28a745; }
 .blue{ border-left:12px solid #007bff; }
 .yellow{ border-left:12px solid #ffc107; }
@@ -73,10 +70,14 @@ let weeklyData = {};
 let stepScores = [];
 
 async function loadData(){
+  
   const res = await fetch(API);
   const json = await res.json();
+
+  // FIXED: assign correct structure
   weeklyData = json.weeklyTotals;
   stepScores = json.stepScores;
+
   renderSummary();
   renderSteps();
   renderChart();
@@ -120,6 +121,7 @@ function renderSteps(){
 }
 
 function renderChart(){
+
   const ctx = document.getElementById("chart").getContext("2d");
 
   new Chart(ctx, {
