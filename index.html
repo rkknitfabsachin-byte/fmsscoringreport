@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Weekly Performance – RK KNIT FAB</title>
-
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -22,12 +21,12 @@ h2{
 }
 
 .card{
-  padding:18px;
-  margin-bottom:18px;
+  padding:20px;
   border-radius:18px;
-  background:rgba(255,255,255,0.55);
+  background:rgba(255,255,255,0.6);
   backdrop-filter:blur(12px);
-  border:1px solid rgba(255,255,255,0.45);
+  border:1px solid rgba(255,255,255,0.4);
+  margin-bottom:20px;
   box-shadow:0 10px 25px rgba(0,0,0,0.1);
 }
 
@@ -37,101 +36,89 @@ h2{
   gap:15px;
 }
 
-.green{ border-left:12px solid #28a745; }
-.blue{ border-left:12px solid #007bff; }
-.yellow{ border-left:12px solid #ffc107; }
-.orange{ border-left:12px solid #fd7e14; }
 .red{ border-left:12px solid #dc3545; }
-.grey{ border-left:12px solid #6c757d; }
+.yellow{ border-left:12px solid #ffc107; }
+.green{ border-left:12px solid #28a745; }
 
-.step-title{
-  font-size:18px;
-  font-weight:600;
+.score-value{
+  font-size:20px;
+  font-weight:700;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Weekly Production Performance</h2>
+<h2>Weekly Negative Gap Analysis</h2>
 
-<div id="weeklyBox"></div>
+<div id="overall"></div>
 
-<h3 style="margin-top:30px;">Step-wise Weekly Scores</h3>
+<h3>Step-wise Negative Score</h3>
 <div class="grid" id="steps"></div>
 
-<canvas id="chart" style="margin-top:30px;"></canvas>
+<canvas id="chart" style="margin-top:40px;"></canvas>
 
 <script>
 
 const API = "https://script.google.com/macros/s/AKfycbxBwOJYL9OIPmsfPKE7s0teHAHp0I7svWM9ww5-_wTHlFXQN2zY7GhqQvga5tBopJcj/exec";
 
-let weeklyData = {};
+let overallScore = 0;
 let stepScores = [];
 
 async function loadData(){
-  
-  const res = await fetch(API);
-  const json = await res.json();
+  const raw = await fetch(API);
+  const json = await raw.json();
 
-  // FIXED: assign correct structure
-  weeklyData = json.weeklyTotals;
+  overallScore = json.overallScore;
   stepScores = json.stepScores;
 
-  renderSummary();
+  renderOverall();
   renderSteps();
   renderChart();
 }
 
-function renderSummary(){
-  document.getElementById("weeklyBox").innerHTML = `
-    <div class="card">
-      <h3>Weekly Summary</h3>
-      <p><b>Total Planned:</b> ${weeklyData.plannedCount}</p>
-      <p><b>Total Actual:</b> ${weeklyData.actualCount}</p>
-      <p><b>On-Time:</b> ${weeklyData.onTime}</p>
-      <p><b>Late:</b> ${weeklyData.late}</p>
-      <p><b>Very Late:</b> ${weeklyData.veryLate}</p>
-      <p><b>Overdue:</b> ${weeklyData.overdue}</p>
+function colorScore(s){
+  if (s >= -20) return "green";
+  if (s >= -50) return "yellow";
+  return "red";
+}
+
+function renderOverall(){
+  document.getElementById("overall").innerHTML = `
+    <div class="card ${colorScore(overallScore)}">
+      <h3>Overall Weekly Score</h3>
+      <div class="score-value">${overallScore}</div>
+      <p>-1 = Excellent, -100 = Worst</p>
     </div>
   `;
 }
 
-function getColor(score){
-  if(score > 5) return "green";
-  if(score > 0) return "blue";
-  if(score === 0) return "grey";
-  if(score < -5) return "red";
-  return "yellow";
-}
-
 function renderSteps(){
-  let html = "";
+  let out = "";
 
   stepScores.forEach(s => {
-    html += `
-      <div class="card ${getColor(s.score)}">
-        <div class="step-title">${s.step}</div>
-        <p>Weekly Score: <b>${s.score}</b></p>
+    out += `
+      <div class="card ${colorScore(s.score)}">
+        <div style="font-size:18px;font-weight:600">${s.step}</div>
+        <div class="score-value">${s.score}</div>
       </div>
     `;
   });
 
-  document.getElementById("steps").innerHTML = html;
+  document.getElementById("steps").innerHTML = out;
 }
 
 function renderChart(){
-
   const ctx = document.getElementById("chart").getContext("2d");
 
-  new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: stepScores.map(s => s.step),
-      datasets: [{
-        label: "Weekly Score",
-        data: stepScores.map(s => s.score),
-        borderWidth: 1
+  new Chart(ctx,{
+    type:"bar",
+    data:{
+      labels:stepScores.map(s=>s.step),
+      datasets:[{
+        label:"Negative Score",
+        data:stepScores.map(s=>s.score),
+        borderWidth:1
       }]
     }
   });
@@ -140,6 +127,5 @@ function renderChart(){
 loadData();
 
 </script>
-
 </body>
 </html>
